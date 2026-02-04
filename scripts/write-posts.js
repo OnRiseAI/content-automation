@@ -92,19 +92,45 @@ function generateSlug(title) {
     .substring(0, 80)
 }
 
+function generateExcerpt(content) {
+  // Strip markdown and get first 160 chars
+  const plain = content
+    .replace(/#{1,6}\s/g, '')
+    .replace(/\*\*/g, '')
+    .replace(/\n/g, ' ')
+    .trim()
+  return plain.substring(0, 160) + '...'
+}
+
+function calculateReadingTime(content) {
+  const words = content.split(/\s+/).length
+  return Math.ceil(words / 200)
+}
+
+function generateCategorySlug(category) {
+  if (!category) return null
+  return category.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-')
+}
+
 async function saveBlogPost(idea, content, metaDescription) {
   const slug = generateSlug(idea.suggested_title)
 
   const { error } = await supabase.from('blog_posts').insert({
     title: idea.suggested_title,
     slug: slug,
+    excerpt: generateExcerpt(content),
     content: content,
+    meta_title: idea.suggested_title,
     meta_description: metaDescription,
     keywords: idea.target_keywords,
     category: idea.topic,
+    category_slug: generateCategorySlug(idea.topic),
+    reading_time: calculateReadingTime(content),
+    author_name: 'Meet Your Clinic',
     status: 'draft',
     source_idea_id: idea.id,
-    created_at: new Date().toISOString()
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   })
 
   if (error) {
