@@ -65,6 +65,44 @@ Write the full blog post in markdown format.`
   return response.choices[0].message.content
 }
 
+async function generateImage(title, topic) {
+  console.log('Generating image...')
+
+  const response = await openai.images.generate({
+    model: 'dall-e-3',
+    prompt: `Professional, clean medical tourism photo for a blog post about "${title}". Topic: ${topic}. Style: Modern healthcare facility, welcoming atmosphere, professional medical staff or modern clinic interior. No text overlays. Photorealistic, high quality.`,
+    n: 1,
+    size: '1792x1024',
+    quality: 'standard'
+  })
+
+  const imageUrl = response.data[0].url
+
+  // Download and upload to Supabase Storage
+  const imageResponse = await fetch(imageUrl)
+  const imageBuffer = await imageResponse.arrayBuffer()
+  const fileName = `blog/${Date.now()}-${Math.random().toString(36).substring(7)}.png`
+
+  const { error: uploadError } = await supabase.storage
+    .from('images')
+    .upload(fileName, imageBuffer, {
+      contentType: 'image/png',
+      upsert: false
+    })
+
+  if (uploadError) {
+    console.error('Error uploading image:', uploadError.message)
+    return null
+  }
+
+  const { data: { publicUrl } } = supabase.storage
+    .from('images')
+    .getPublicUrl(fileName)
+
+  console.log('Image generated:', publicUrl)
+  return publicUrl
+}
+
 async function generateMetaDescription(title, content) {
   const response = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
@@ -112,7 +150,7 @@ function generateCategorySlug(category) {
   return category.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-')
 }
 
-async function saveBlogPost(idea, content, metaDescription) {
+async function saveBlogPost(idea, content, metaDescription, imageUrl) {
   const slug = generateSlug(idea.suggested_title)
 
   const { error } = await supabase.from('blog_posts').insert({
@@ -120,6 +158,7 @@ async function saveBlogPost(idea, content, metaDescription) {
     slug: slug,
     excerpt: generateExcerpt(content),
     content: content,
+    image_url: imageUrl,
     meta_title: idea.suggested_title,
     meta_description: metaDescription,
     keywords: idea.target_keywords,
@@ -172,7 +211,8 @@ async function run() {
 
       const content = await generateBlogPost(idea)
       const metaDescription = await generateMetaDescription(idea.suggested_title, content)
-      const slug = await saveBlogPost(idea, content, metaDescription)
+      const imageUrl = await generateImage(idea.suggested_title, idea.topic)
+      const slug = await saveBlogPost(idea, content, metaDescription, imageUrl)
       await markIdeaAsProcessed(idea.id)
 
       written++
