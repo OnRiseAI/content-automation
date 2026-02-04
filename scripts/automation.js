@@ -1,4 +1,4 @@
-import Imap from 'imapflow'
+import { ImapFlow } from 'imapflow'
 import { simpleParser } from 'mailparser'
 import OpenAI from 'openai'
 import { createClient } from '@supabase/supabase-js'
@@ -122,7 +122,7 @@ async function runAutomation() {
   let skipped = 0
   let errors = 0
 
-  const client = new Imap({
+  const client = new ImapFlow({
     host: 'imap.gmail.com',
     port: 993,
     secure: true,
