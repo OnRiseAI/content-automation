@@ -21,19 +21,18 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Debug secrets
-        run: |
-          echo "GMAIL_USER set: ${{ secrets.GMAIL_USER != '' }}"
-          echo "GMAIL_APP_PASSWORD set: ${{ secrets.GMAIL_APP_PASSWORD != '' }}"
-          echo "OPENAI_API_KEY set: ${{ secrets.OPENAI_API_KEY != '' }}"
-          echo "SUPABASE_URL set: ${{ secrets.SUPABASE_URL != '' }}"
-          echo "SUPABASE_ANON_KEY set: ${{ secrets.SUPABASE_ANON_KEY != '' }}"
-
-      - name: Run automation
+      - name: Collect content ideas from Gmail
         run: npm start
         env:
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+
+      - name: Write blog posts (max 3/day)
+        run: npm run write-posts
+        env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}

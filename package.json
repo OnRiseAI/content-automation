@@ -4,7 +4,8 @@
   "type": "module",
   "description": "Google Alerts to content ideas automation",
   "scripts": {
-    "start": "node scripts/automation.js"
+    "start": "node scripts/automation.js",
+    "write-posts": "node scripts/write-posts.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",
